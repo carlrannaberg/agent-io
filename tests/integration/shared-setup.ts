@@ -38,7 +38,7 @@ async function performSetup(): Promise<IntegrationSetupResults> {
   const rootDir = join(__dirname, '../..');
   const startTime = Date.now();
 
-  setupResults = {
+  const results: IntegrationSetupResults = {
     buildPassed: false,
     typecheckPassed: false,
     lintPassed: false,
@@ -56,11 +56,11 @@ async function performSetup(): Promise<IntegrationSetupResults> {
       timeout: 120000,
     });
 
-    setupResults.buildPassed = true;
-    setupResults.buildTime = Date.now() - startTime;
+    results.buildPassed = true;
+    results.buildTime = Date.now() - startTime;
 
     // If build passes, TypeScript must have passed too
-    setupResults.typecheckPassed = true;
+    results.typecheckPassed = true;
 
     // Test linting configuration
     try {
@@ -69,11 +69,11 @@ async function performSetup(): Promise<IntegrationSetupResults> {
         stdio: 'pipe',
         timeout: 30000,
       });
-      setupResults.lintPassed = true;
+      results.lintPassed = true;
     } catch (lintError) {
       // eslint-disable-next-line no-console
       console.warn('⚠️  Linting failed but continuing tests');
-      setupResults.lintPassed = false;
+      results.lintPassed = false;
     }
 
     // Verify build artifacts exist
@@ -84,21 +84,23 @@ async function performSetup(): Promise<IntegrationSetupResults> {
     });
 
     if (!allBuilt) {
-      setupResults.buildPassed = false;
+      results.buildPassed = false;
     }
 
     // eslint-disable-next-line no-console
-    console.log(`✅ Shared setup completed in ${setupResults.buildTime}ms`);
+    console.log(`✅ Shared setup completed in ${results.buildTime}ms`);
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('❌ Shared setup failed:', error);
-    setupResults.buildPassed = false;
-    setupResults.typecheckPassed = false;
+    results.buildPassed = false;
+    results.typecheckPassed = false;
   }
 
+  // Only update global state after we're done
+  setupResults = results;
   setupComplete = true;
   setupPromise = null; // Clear the promise since we're done
-  return setupResults;
+  return results;
 }
 
 /**
