@@ -712,6 +712,15 @@ amp  # Interactive mode
 echo "Build and test my project" | amp | aio-stream
 ```
 
+#### Cursor Agent CLI
+```bash
+# Cursor Agent requires --output-format=stream-json for JSONL output
+cursor-agent -p "Read package.json and analyze dependencies" --output-format=stream-json | aio-stream
+
+# With explicit vendor specification
+cursor-agent -p "Run tests and check results" --output-format=stream-json | aio-stream --vendor cursor
+```
+
 ### Basic Usage
 
 ```bash
@@ -724,6 +733,9 @@ gemini -p "explain recursion" | aio-stream --vendor gemini
 # Process Amp output
 echo "explain recursion" | amp | aio-stream --vendor amp
 
+# Process Cursor Agent output
+cursor-agent -p "explain recursion" --output-format=stream-json | aio-stream
+
 # Filter specific event types
 cat session.jsonl | aio-stream --only tool,error --collapse-tools
 ```
@@ -731,7 +743,7 @@ cat session.jsonl | aio-stream --only tool,error --collapse-tools
 ### Options
 
 ```bash
--v, --vendor <type>     # Vendor: auto|claude|gemini|amp (default: auto)
+-v, --vendor <type>     # Vendor: auto|claude|gemini|amp|cursor (default: auto)
 -f, --format <type>     # Format: ansi|html|json (default: ansi)
 --collapse-tools        # Collapse tool output sections
 --hide-tools           # Hide tool execution entirely

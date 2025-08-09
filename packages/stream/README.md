@@ -16,7 +16,7 @@ pnpm add @agent-io/stream
 
 ### CLI Usage
 
-The `aio-stream` command processes output from AI agent CLIs (JSONL for Claude/Amp, plain text for Gemini):
+The `aio-stream` command processes output from AI agent CLIs (JSONL for Claude/Amp/Cursor, plain text for Gemini):
 
 ```bash
 # Auto-detect vendor and format for terminal
@@ -27,6 +27,9 @@ gemini -p "explain recursion" | aio-stream --vendor gemini
 
 # Process Amp output
 echo "explain recursion" | amp | aio-stream --vendor amp
+
+# Process Cursor Agent output with streaming JSONL
+cursor-agent -p "explain recursion" --output-format=stream-json | aio-stream
 
 # Filter specific event types
 cat session.jsonl | aio-stream --only tool,error --collapse-tools
@@ -55,7 +58,7 @@ claude --output-format stream-json -p "explain quantum computing" | aio-stream -
 
 ```bash
 Options:
-  -v, --vendor <type>     Vendor: auto|claude|gemini|amp (default: auto)
+  -v, --vendor <type>     Vendor: auto|claude|gemini|amp|cursor (default: auto)
   -f, --format <type>     Format: ansi|html|json (default: ansi)
   --collapse-tools        Collapse tool output sections
   --hide-tools           Hide tool execution entirely
@@ -148,7 +151,7 @@ Stream and parse JSONL input into normalized agent events.
 
 **Options:**
 
-- `vendor: Vendor` - Vendor format ('auto', 'claude', 'gemini', 'amp')
+- `vendor: Vendor` - Vendor format ('auto', 'claude', 'gemini', 'amp', 'cursor')
 - `source: ReadableStream` - Input stream containing JSONL data
 - `continueOnError?: boolean` - Continue parsing after errors (default: true)
 - `emitDebugEvents?: boolean` - Emit debug events for unknown formats (default: false)
@@ -361,6 +364,33 @@ for await (const output of streamFormat({
   collapseTools: true,
 })) {
   process.stdout.write(output);
+}
+```
+
+### Processing Cursor Agent Output
+
+```typescript
+import { streamEvents } from '@agent-io/stream';
+import { spawn } from 'child_process';
+
+const cursorAgent = spawn('cursor-agent', ['-p', 'Read and analyze package.json', '--output-format=stream-json']);
+
+for await (const event of streamEvents({
+  vendor: 'cursor',
+  source: cursorAgent.stdout,
+})) {
+  switch (event.t) {
+    case 'msg':
+      console.log(`${event.role}: ${event.text}`);
+      break;
+    case 'tool':
+      if (event.phase === 'start') {
+        console.log(`🔧 ${event.name} started`);
+      } else if (event.phase === 'end') {
+        console.log(`✅ ${event.name} completed (${event.exitCode === 0 ? 'success' : 'failed'})`);
+      }
+      break;
+  }
 }
 ```
 

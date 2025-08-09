@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Agent-IO** is a universal I/O toolkit for AI agent CLIs that normalizes output from Claude Code,
-Gemini CLI, Amp Code, and other AI assistants into unified event streams with beautiful terminal and
+Gemini CLI, Amp Code, Cursor Agent, and other AI assistants into unified event streams with beautiful terminal and
 HTML rendering.
 
 ## Overview
@@ -14,7 +14,7 @@ HTML rendering.
 Working with different AI agent CLIs means dealing with different output formats. Agent-IO solves
 this by providing:
 
-- 🚀 **Universal Format**: Normalize JSONL outputs from Claude, Gemini, Amp, and more
+- 🚀 **Universal Format**: Normalize JSONL outputs from Claude, Gemini, Amp, Cursor, and more
 - 🎨 **Beautiful Rendering**: ANSI colors for terminals, semantic HTML for web
 - 📊 **High Performance**: 2-3M lines/second throughput with constant memory usage
 - 🔄 **True Streaming**: Process infinite streams without buffering
@@ -60,6 +60,9 @@ gemini -p "explain recursion" | aio-stream --vendor gemini
 
 # Process Amp output
 echo "explain recursion" | amp | aio-stream --vendor amp
+
+# Process Cursor Agent output
+cursor-agent -p "explain recursion" --output-format=stream-json | aio-stream
 ```
 
 ### Programmatic Usage

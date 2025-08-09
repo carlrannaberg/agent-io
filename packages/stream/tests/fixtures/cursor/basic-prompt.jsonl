@@ -1,0 +1,10 @@
+{"type":"system","subtype":"init","apiKeySource":"login","cwd":"/workspace/project","session_id":"550e8400-e29b-41d4-a716-446655440001","model":"OpenAI GPT-4o","permissionMode":"default"}
+{"type":"user","message":{"role":"user","content":[{"type":"text","text":"What is the capital of France?"}]},"session_id":"550e8400-e29b-41d4-a716-446655440001"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"The"}]},"session_id":"550e8400-e29b-41d4-a716-446655440001"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":" capital"}]},"session_id":"550e8400-e29b-41d4-a716-446655440001"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":" of"}]},"session_id":"550e8400-e29b-41d4-a716-446655440001"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":" France"}]},"session_id":"550e8400-e29b-41d4-a716-446655440001"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":" is"}]},"session_id":"550e8400-e29b-41d4-a716-446655440001"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":" Paris"}]},"session_id":"550e8400-e29b-41d4-a716-446655440001"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"."}]},"session_id":"550e8400-e29b-41d4-a716-446655440001"}
+{"type":"result","subtype":"success","duration_ms":1250,"is_error":false,"result":"Successfully answered question about French capital","session_id":"550e8400-e29b-41d4-a716-446655440001"}

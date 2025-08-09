@@ -225,7 +225,7 @@ export interface DebugEvent {
  * @category Types
  * @since 0.1.0
  */
-export type Vendor = 'auto' | 'claude' | 'gemini' | 'amp';
+export type Vendor = 'auto' | 'claude' | 'gemini' | 'amp' | 'cursor';
 
 /**
  * Options for streaming events

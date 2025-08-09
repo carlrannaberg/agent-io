@@ -1,0 +1,40 @@
+{"type":"system","subtype":"init","apiKeySource":"login","cwd":"/workspace/project","session_id":"550e8400-e29b-41d4-a716-446655440003","model":"OpenAI GPT-4o","permissionMode":"default"}
+{"type":"user","message":{"role":"user","content":[{"type":"text","text":"Write a simple hello world function"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"H"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"e"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"r"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"e"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"'"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"s"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":" "}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"a"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":" "}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"s"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"i"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"m"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"p"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"l"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"e"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":" "}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"H"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"e"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"l"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"l"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"o"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":" "}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"W"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"o"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"r"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"l"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"d"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":" "}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"f"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"u"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"n"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"c"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"t"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"i"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"o"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"n"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":":\n\n```javascript\nfunction helloWorld() {\n  console.log('Hello, World!');\n}\n\nhelloWorld();\n```"}]},"session_id":"550e8400-e29b-41d4-a716-446655440003"}
+{"type":"result","subtype":"success","duration_ms":3200,"is_error":false,"result":"Generated simple Hello World function in JavaScript","session_id":"550e8400-e29b-41d4-a716-446655440003"}

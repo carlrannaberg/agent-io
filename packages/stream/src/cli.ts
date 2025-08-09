@@ -82,7 +82,7 @@ async function main() {
     .argument('[file]', 'input JSONL file (default: stdin)')
     .option(
       '-v, --vendor <type>',
-      'vendor type (auto|claude|gemini|amp)',
+      'vendor type (auto|claude|cursor|gemini|amp)',
       'auto',
     )
     .option('-f, --format <type>', 'output format (ansi|html|json)', 'ansi')
@@ -125,7 +125,7 @@ Event types for --only:
   
 Vendor auto-detection:
   - Automatically detects format from input
-  - Supports claude, gemini, amp formats
+  - Supports claude, cursor, gemini, amp formats
   - Use --vendor to force specific parser
 `,
     );
@@ -158,9 +158,9 @@ Vendor auto-detection:
   }
 
   // Validate vendor
-  if (!['auto', 'claude', 'gemini', 'amp'].includes(opts.vendor)) {
+  if (!['auto', 'claude', 'cursor', 'gemini', 'amp'].includes(opts.vendor)) {
     process.stderr.write(
-      `Error: Invalid vendor '${opts.vendor}'. Must be one of: auto, claude, gemini, amp\n`,
+      `Error: Invalid vendor '${opts.vendor}'. Must be one of: auto, claude, cursor, gemini, amp\n`,
     );
     if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
       process.exit(1);

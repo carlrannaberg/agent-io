@@ -2,6 +2,7 @@ import { VendorParser, ParserEntry, DetectionResult } from './types.js';
 import { claudeParser } from './claude.js';
 import { geminiParser } from './gemini.js';
 import { ampParser } from './amp.js';
+import { cursorParser } from './cursor.js';
 import { Vendor } from '../types.js';
 
 /**
@@ -31,6 +32,7 @@ export class ParserRegistry {
   constructor() {
     // Register built-in parsers with priority
     this.registerParser(claudeParser, 100);
+    this.registerParser(cursorParser, 90);
     this.registerParser(ampParser, 80);
     // Gemini has lowest priority since it accepts any non-JSON text
     this.registerParser(geminiParser, 10);
@@ -324,6 +326,30 @@ export class ParserRegistry {
           }
           break;
 
+        case 'cursor':
+          // Cursor format indicators
+          if (
+            obj.type &&
+            ['system', 'user', 'assistant', 'tool_call', 'result'].includes(
+              obj.type,
+            )
+          ) {
+            confidence += 0.4;
+          }
+          // System events with subtype and session_id are highly specific
+          if (
+            obj.type === 'system' &&
+            obj.subtype === 'init' &&
+            obj.session_id
+          ) {
+            confidence += 0.1;
+          }
+          // Tool call events with call_id are very specific
+          if (obj.type === 'tool_call' && obj.call_id && obj.tool_call) {
+            confidence += 0.1;
+          }
+          break;
+
         case 'amp':
           // Amp phase-based format
           if (
@@ -373,6 +399,15 @@ export class ParserRegistry {
             return `Gemini format detected: type="${obj.type}"`;
           }
           return 'Gemini format detected: structure matches';
+
+        case 'cursor':
+          if (obj.type && obj.session_id) {
+            return `Cursor format detected: type="${obj.type}", session_id="${obj.session_id}"`;
+          }
+          if (obj.type) {
+            return `Cursor format detected: type="${obj.type}"`;
+          }
+          return 'Cursor format detected: structure matches';
 
         case 'amp':
           if (obj.phase && obj.task) {
@@ -448,6 +483,7 @@ export class ParserRegistry {
  *
  * Pre-configured registry with built-in parsers registered:
  * - Claude Code parser (priority: 100)
+ * - Cursor Agent parser (priority: 90)
  * - Amp Code parser (priority: 80)
  * - Gemini CLI parser (priority: 10) - lowest priority as it accepts any non-JSON text
  *
@@ -512,7 +548,7 @@ export function registerParser(
 /**
  * Get a parser by vendor name from the default registry
  *
- * @param vendor - Vendor name to look up ('claude', 'gemini', 'amp')
+ * @param vendor - Vendor name to look up ('claude', 'cursor', 'gemini', 'amp')
  * @returns Parser instance or null if not found
  *
  * @example

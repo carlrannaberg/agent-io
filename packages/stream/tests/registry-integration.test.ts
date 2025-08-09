@@ -438,7 +438,7 @@ describe('Registry Integration Tests', () => {
       testRegistry.registerParser(parser1, 100);
       testRegistry.registerParser(parser2, 100);
 
-      expect(testRegistry.size()).toBe(5); // claude + gemini + amp + 2 new parsers
+      expect(testRegistry.size()).toBe(6); // claude + cursor + gemini + amp + 2 new parsers
       expect(testRegistry.listParsers()).toContain('concurrent1');
       expect(testRegistry.listParsers()).toContain('concurrent2');
 
@@ -468,14 +468,14 @@ describe('Registry Integration Tests', () => {
       };
 
       testRegistry.registerParser(originalParser, 100);
-      expect(testRegistry.size()).toBe(4); // claude + gemini + amp + replaceable
+      expect(testRegistry.size()).toBe(5); // claude + cursor + gemini + amp + replaceable
 
       const retrieved1 = testRegistry.getParser('replaceable');
       expect(retrieved1).toBe(originalParser);
 
       // Replace with new parser
       testRegistry.registerParser(replacementParser, 150);
-      expect(testRegistry.size()).toBe(4); // Should still be 4
+      expect(testRegistry.size()).toBe(5); // Should still be 5
 
       const retrieved2 = testRegistry.getParser('replaceable');
       expect(retrieved2).toBe(replacementParser);
@@ -576,7 +576,7 @@ describe('Registry Integration Tests', () => {
       expect(duration, 'Registry operations should be fast').toBeLessThan(100);
 
       // Registry should be back to original state
-      expect(testRegistry.size()).toBe(3); // Claude + Gemini + Amp
+      expect(testRegistry.size()).toBe(4); // Claude + Cursor + Gemini + Amp
     });
   });
 });

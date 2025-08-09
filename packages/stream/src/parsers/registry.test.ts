@@ -12,6 +12,7 @@ import {
 } from './index.js';
 import { VendorParser } from './types.js';
 import { claudeParser } from './claude.js';
+import { Vendor } from '../types.js';
 
 describe('ParserRegistry', () => {
   let testRegistry: ParserRegistry;
@@ -23,9 +24,10 @@ describe('ParserRegistry', () => {
   describe('constructor', () => {
     it('initializes with all default parsers registered', () => {
       expect(testRegistry.hasParser('claude')).toBe(true);
+      expect(testRegistry.hasParser('cursor')).toBe(true);
       expect(testRegistry.hasParser('gemini')).toBe(true);
       expect(testRegistry.hasParser('amp')).toBe(true);
-      expect(testRegistry.size()).toBe(3);
+      expect(testRegistry.size()).toBe(4);
     });
 
     it('registers Claude parser with priority 100', () => {
@@ -44,7 +46,7 @@ describe('ParserRegistry', () => {
 
       testRegistry.registerParser(mockParser);
       expect(testRegistry.hasParser('test')).toBe(true);
-      expect(testRegistry.getParser('test' as any)).toBe(mockParser);
+      expect(testRegistry.getParser('test' as Vendor)).toBe(mockParser);
     });
 
     it('registers a parser with custom priority', () => {
@@ -74,19 +76,19 @@ describe('ParserRegistry', () => {
       testRegistry.registerParser(parser1);
       testRegistry.registerParser(parser2);
 
-      expect(testRegistry.getParser('test' as any)).toBe(parser2);
-      expect(testRegistry.size()).toBe(4); // claude + gemini + amp + test
+      expect(testRegistry.getParser('test' as Vendor)).toBe(parser2);
+      expect(testRegistry.size()).toBe(5); // claude + cursor + gemini + amp + test
     });
 
     it('throws error for null parser', () => {
       expect(() => {
-        testRegistry.registerParser(null as any);
+        testRegistry.registerParser(null as unknown as VendorParser);
       }).toThrow('Parser cannot be null or undefined');
     });
 
     it('throws error for undefined parser', () => {
       expect(() => {
-        testRegistry.registerParser(undefined as any);
+        testRegistry.registerParser(undefined as unknown as VendorParser);
       }).toThrow('Parser cannot be null or undefined');
     });
 
@@ -152,7 +154,7 @@ describe('ParserRegistry', () => {
     });
 
     it('returns null for non-existing vendor', () => {
-      const parser = testRegistry.getParser('nonexistent' as any);
+      const parser = testRegistry.getParser('nonexistent' as Vendor);
       expect(parser).toBeNull();
     });
 
@@ -184,7 +186,7 @@ describe('ParserRegistry', () => {
     });
 
     it('returns null for non-string input', () => {
-      const detected = testRegistry.detectVendor(null as any);
+      const detected = testRegistry.detectVendor(null as unknown as string);
       expect(detected).toBeNull();
     });
 
@@ -230,7 +232,7 @@ describe('ParserRegistry', () => {
   describe('listParsers', () => {
     it('returns list of registered vendors', () => {
       const vendors = testRegistry.listParsers();
-      expect(vendors).toEqual(['amp', 'claude', 'gemini']);
+      expect(vendors).toEqual(['amp', 'claude', 'cursor', 'gemini']);
     });
 
     it('returns sorted list', () => {
@@ -250,7 +252,7 @@ describe('ParserRegistry', () => {
       testRegistry.registerParser(parser2);
 
       const vendors = testRegistry.listParsers();
-      expect(vendors).toEqual(['alpha', 'amp', 'claude', 'gemini', 'zebra']);
+      expect(vendors).toEqual(['alpha', 'amp', 'claude', 'cursor', 'gemini', 'zebra']);
     });
 
     it('returns empty array for empty registry', () => {
@@ -262,7 +264,7 @@ describe('ParserRegistry', () => {
 
   describe('size', () => {
     it('returns correct size', () => {
-      expect(testRegistry.size()).toBe(3);
+      expect(testRegistry.size()).toBe(4);
 
       const mockParser: VendorParser = {
         vendor: 'test',
@@ -271,7 +273,7 @@ describe('ParserRegistry', () => {
       };
 
       testRegistry.registerParser(mockParser);
-      expect(testRegistry.size()).toBe(4); // claude + gemini + amp + test
+      expect(testRegistry.size()).toBe(5); // claude + cursor + gemini + amp + test
     });
   });
 
@@ -548,9 +550,10 @@ describe('Default registry and convenience functions', () => {
   describe('default registry', () => {
     it('is initialized with all default parsers', () => {
       expect(registry.hasParser('claude')).toBe(true);
+      expect(registry.hasParser('cursor')).toBe(true);
       expect(registry.hasParser('gemini')).toBe(true);
       expect(registry.hasParser('amp')).toBe(true);
-      expect(registry.size()).toBe(3);
+      expect(registry.size()).toBe(4);
     });
   });
 
@@ -577,7 +580,7 @@ describe('Default registry and convenience functions', () => {
     });
 
     it('returns null for non-existing parser', () => {
-      const parser = getParser('nonexistent' as any);
+      const parser = getParser('nonexistent' as Vendor);
       expect(parser).toBeNull();
     });
   });
@@ -614,7 +617,7 @@ describe('Default registry and convenience functions', () => {
 
     it('throws error for unknown vendor', () => {
       expect(() => {
-        selectParser('unknown' as any);
+        selectParser('unknown' as Vendor);
       }).toThrow('Unknown vendor: unknown');
     });
 
