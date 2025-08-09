@@ -1,6 +1,6 @@
 {
   "name": "@agent-io/stream",
-  "version": "0.1.7",
+  "version": "0.2.0",
   "description": "Universal JSONL formatter for AI agent CLIs with beautiful terminal and HTML output",
   "type": "module",
   "exports": {

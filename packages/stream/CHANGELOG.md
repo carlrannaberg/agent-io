@@ -1,5 +1,11 @@
 # @agent-io/stream
 
+## 0.2.0
+
+### Minor Changes
+
+- chore: apply Prettier formatting across codebase
+
 ## 0.1.7
 
 ### Patch Changes
