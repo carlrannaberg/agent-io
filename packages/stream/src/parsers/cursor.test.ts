@@ -13,12 +13,12 @@ describe('CursorParser', () => {
         cwd: '/project',
         session_id: 'test-123',
         model: 'GPT-5',
-        permissionMode: 'default'
+        permissionMode: 'default',
       });
-      
+
       expect(cursorParser.detect(systemEvent)).toBe(true);
     });
-    
+
     it('should detect tool_call events with call_id', () => {
       // Purpose: Ensures tool calls are identified by their unique structure
       // This test can fail if call_id field checking is missing
@@ -27,12 +27,12 @@ describe('CursorParser', () => {
         subtype: 'started',
         call_id: 'call_123',
         tool_call: { readToolCall: { args: { path: 'file.txt' } } },
-        session_id: 'test-123'
+        session_id: 'test-123',
       });
-      
+
       expect(cursorParser.detect(toolEvent)).toBe(true);
     });
-    
+
     it('should detect user message events', () => {
       // Purpose: Validates user message format detection
       // This test can fail if message field validation is incorrect
@@ -40,14 +40,14 @@ describe('CursorParser', () => {
         type: 'user',
         message: {
           role: 'user',
-          content: [{ type: 'text', text: 'Hello' }]
+          content: [{ type: 'text', text: 'Hello' }],
         },
-        session_id: 'test-123'
+        session_id: 'test-123',
       });
-      
+
       expect(cursorParser.detect(userEvent)).toBe(true);
     });
-    
+
     it('should detect assistant message events', () => {
       // Purpose: Validates assistant message format detection
       // This test can fail if role checking is too restrictive
@@ -55,14 +55,14 @@ describe('CursorParser', () => {
         type: 'assistant',
         message: {
           role: 'assistant',
-          content: [{ type: 'text', text: 'Hi' }]
+          content: [{ type: 'text', text: 'Hi' }],
         },
-        session_id: 'test-123'
+        session_id: 'test-123',
       });
-      
+
       expect(cursorParser.detect(assistantEvent)).toBe(true);
     });
-    
+
     it('should detect result events', () => {
       // Purpose: Validates result event detection with timing data
       // This test can fail if duration_ms field is not checked
@@ -72,34 +72,34 @@ describe('CursorParser', () => {
         duration_ms: 25615,
         is_error: false,
         result: 'Task completed',
-        session_id: 'test-123'
+        session_id: 'test-123',
       });
-      
+
       expect(cursorParser.detect(resultEvent)).toBe(true);
     });
-    
+
     it('should reject non-Cursor formats', () => {
       // Purpose: Prevents false positives with other vendor formats
       // This test can fail if detection is too permissive
-      
+
       // Claude format
       const claudeEvent = JSON.stringify({
         type: 'message',
-        message: { role: 'assistant', content: 'test' }
+        message: { role: 'assistant', content: 'test' },
       });
       expect(cursorParser.detect(claudeEvent)).toBe(false);
-      
+
       // Amp format
       const ampEvent = JSON.stringify({
         phase: 'start',
-        task: 'build'
+        task: 'build',
       });
       expect(cursorParser.detect(ampEvent)).toBe(false);
-      
+
       // Plain text
       expect(cursorParser.detect('Hello world')).toBe(false);
     });
-    
+
     it('should reject malformed JSON', () => {
       // Purpose: Ensures graceful handling of invalid input
       // This test can fail if JSON parsing is not wrapped in try-catch
@@ -111,35 +111,35 @@ describe('CursorParser', () => {
     it('should require specific fields for each event type', () => {
       // Purpose: Validates that detection is strict about required fields
       // This test can fail if field validation is incomplete
-      
+
       // System event without subtype should be rejected
       const systemEventMissingSubtype = JSON.stringify({
         type: 'system',
         apiKeySource: 'login',
-        session_id: 'test-123'
+        session_id: 'test-123',
       });
       expect(cursorParser.detect(systemEventMissingSubtype)).toBe(false);
-      
+
       // Tool call event without call_id should be rejected
       const toolEventMissingCallId = JSON.stringify({
         type: 'tool_call',
         subtype: 'started',
-        tool_call: { readToolCall: { args: {} } }
+        tool_call: { readToolCall: { args: {} } },
       });
       expect(cursorParser.detect(toolEventMissingCallId)).toBe(false);
-      
+
       // Message event without message field should be rejected
       const messageEventMissingMessage = JSON.stringify({
         type: 'user',
-        session_id: 'test-123'
+        session_id: 'test-123',
       });
       expect(cursorParser.detect(messageEventMissingMessage)).toBe(false);
-      
+
       // Result event without duration_ms should be rejected
       const resultEventMissingDuration = JSON.stringify({
         type: 'result',
         subtype: 'success',
-        result: 'Task completed'
+        result: 'Task completed',
       });
       expect(cursorParser.detect(resultEventMissingDuration)).toBe(false);
     });
@@ -149,7 +149,7 @@ describe('CursorParser', () => {
       // This test can fail if the valid types list is incomplete
       const invalidTypeEvent = JSON.stringify({
         type: 'unknown_type',
-        session_id: 'test-123'
+        session_id: 'test-123',
       });
       expect(cursorParser.detect(invalidTypeEvent)).toBe(false);
     });
@@ -157,24 +157,24 @@ describe('CursorParser', () => {
     it('should handle edge cases gracefully', () => {
       // Purpose: Tests robustness against edge cases in input data
       // This test can fail if type guards are insufficient
-      
+
       // Null object
       expect(cursorParser.detect('null')).toBe(false);
-      
+
       // Array instead of object
       expect(cursorParser.detect('[]')).toBe(false);
-      
+
       // Empty object
       expect(cursorParser.detect('{}')).toBe(false);
-      
+
       // Object with type but not string
       expect(cursorParser.detect('{"type": 123}')).toBe(false);
-      
+
       // Object with null type
       expect(cursorParser.detect('{"type": null}')).toBe(false);
     });
   });
-  
+
   describe('parser properties', () => {
     it('should have correct vendor name and metadata', () => {
       // Purpose: Ensures proper registry configuration
@@ -186,7 +186,7 @@ describe('CursorParser', () => {
         documentationUrl: 'https://docs.cursor.com/cli-reference',
       });
     });
-    
+
     it('should have required parser methods', () => {
       // Purpose: Validates VendorParser interface implementation
       // This test can fail if interface is not fully implemented

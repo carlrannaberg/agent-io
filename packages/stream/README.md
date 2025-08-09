@@ -16,7 +16,8 @@ pnpm add @agent-io/stream
 
 ### CLI Usage
 
-The `aio-stream` command processes output from AI agent CLIs (JSONL for Claude/Amp/Cursor, plain text for Gemini):
+The `aio-stream` command processes output from AI agent CLIs (JSONL for Claude/Amp/Cursor, plain
+text for Gemini):
 
 ```bash
 # Auto-detect vendor and format for terminal
@@ -373,7 +374,11 @@ for await (const output of streamFormat({
 import { streamEvents } from '@agent-io/stream';
 import { spawn } from 'child_process';
 
-const cursorAgent = spawn('cursor-agent', ['-p', 'Read and analyze package.json', '--output-format=stream-json']);
+const cursorAgent = spawn('cursor-agent', [
+  '-p',
+  'Read and analyze package.json',
+  '--output-format=stream-json',
+]);
 
 for await (const event of streamEvents({
   vendor: 'cursor',

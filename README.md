@@ -6,8 +6,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Agent-IO** is a universal I/O toolkit for AI agent CLIs that normalizes output from Claude Code,
-Gemini CLI, Amp Code, Cursor Agent, and other AI assistants into unified event streams with beautiful terminal and
-HTML rendering.
+Gemini CLI, Amp Code, Cursor Agent, and other AI assistants into unified event streams with
+beautiful terminal and HTML rendering.
 
 ## Overview
 

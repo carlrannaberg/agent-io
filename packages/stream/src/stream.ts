@@ -209,11 +209,11 @@ export async function* streamEvents(
         // Emit error event for flush failure
         yield {
           t: 'error',
-          message: `Failed to flush parser: ${flushError instanceof Error ? flushError.message : String(flushError)}`
+          message: `Failed to flush parser: ${flushError instanceof Error ? flushError.message : String(flushError)}`,
         };
       }
     }
-    
+
     // Emit summary debug event if requested
     if (emitDebugEvents && totalLines > 0) {
       yield {

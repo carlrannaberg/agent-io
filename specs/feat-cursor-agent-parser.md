@@ -3,24 +3,32 @@
 **Status**: Draft  
 **Authors**: Claude Assistant  
 **Date**: 2025-08-09  
-**Version**: 1.0.0  
+**Version**: 1.0.0
 
 ## Overview
 
-This specification outlines the implementation of a Cursor Agent parser for the agent-io streaming toolkit. The parser will handle the JSONL output format produced by the `cursor-agent` CLI when invoked with the `--output-format=stream-json` flag, normalizing it into the unified AgentEvent stream format used by agent-io.
+This specification outlines the implementation of a Cursor Agent parser for the agent-io streaming
+toolkit. The parser will handle the JSONL output format produced by the `cursor-agent` CLI when
+invoked with the `--output-format=stream-json` flag, normalizing it into the unified AgentEvent
+stream format used by agent-io.
 
 ## Background/Problem Statement
 
-Cursor Agent is an AI-powered CLI tool that generates streaming JSON output similar to Claude Code and other AI agent CLIs. Currently, agent-io supports Claude Code, Gemini CLI, and Amp Code outputs, but lacks support for Cursor Agent's specific JSONL format. 
+Cursor Agent is an AI-powered CLI tool that generates streaming JSON output similar to Claude Code
+and other AI agent CLIs. Currently, agent-io supports Claude Code, Gemini CLI, and Amp Code outputs,
+but lacks support for Cursor Agent's specific JSONL format.
 
-The Cursor Agent output format shares similarities with Claude's format but has distinct differences:
+The Cursor Agent output format shares similarities with Claude's format but has distinct
+differences:
+
 - Uses `type` and `subtype` fields for event categorization
 - Includes session tracking with `session_id` field
 - Has unique event types like `system` with `subtype: init`
 - Tool calls use different field structure (`tool_call` instead of `tool_use`)
 - Streaming text messages arrive character-by-character or word-by-word
 
-Without proper parsing support, users cannot pipe Cursor Agent output through the agent-io stream formatter, limiting the toolkit's universality.
+Without proper parsing support, users cannot pipe Cursor Agent output through the agent-io stream
+formatter, limiting the toolkit's universality.
 
 ## Goals
 
@@ -44,15 +52,18 @@ Without proper parsing support, users cannot pipe Cursor Agent output through th
 ## Technical Dependencies
 
 ### Internal Dependencies
+
 - `@agent-io/core` - Core types and utilities
 - `@agent-io/jsonl` - JSONL parsing utilities
 - `@agent-io/stream` - Streaming engine and parser registry
 
 ### External Dependencies
+
 - No new external dependencies required
 - Uses existing: `commander`, `kleur` (inherited from stream package)
 
 ### Version Requirements
+
 - Node.js >=18.0.0 (existing requirement)
 - TypeScript ^5.0.0 (existing requirement)
 
@@ -77,6 +88,7 @@ packages/stream/src/parsers/
 Based on the analyzed output, Cursor Agent produces these event types:
 
 #### 1. System Events
+
 ```json
 {
   "type": "system",
@@ -90,30 +102,33 @@ Based on the analyzed output, Cursor Agent produces these event types:
 ```
 
 #### 2. User Messages
+
 ```json
 {
   "type": "user",
   "message": {
     "role": "user",
-    "content": [{"type": "text", "text": "message content"}]
+    "content": [{ "type": "text", "text": "message content" }]
   },
   "session_id": "uuid"
 }
 ```
 
 #### 3. Assistant Messages (Streaming)
+
 ```json
 {
   "type": "assistant",
   "message": {
     "role": "assistant",
-    "content": [{"type": "text", "text": "partial text"}]
+    "content": [{ "type": "text", "text": "partial text" }]
   },
   "session_id": "uuid"
 }
 ```
 
 #### 4. Tool Calls
+
 ```json
 {
   "type": "tool_call",
@@ -121,8 +136,8 @@ Based on the analyzed output, Cursor Agent produces these event types:
   "call_id": "unique_id",
   "tool_call": {
     "readToolCall": {
-      "args": {"path": "file.txt"},
-      "result": {"success": {"content": "..."}}
+      "args": { "path": "file.txt" },
+      "result": { "success": { "content": "..." } }
     }
   },
   "session_id": "uuid"
@@ -130,6 +145,7 @@ Based on the analyzed output, Cursor Agent produces these event types:
 ```
 
 #### 5. Result Events
+
 ```json
 {
   "type": "result",
@@ -149,21 +165,21 @@ Based on the analyzed output, Cursor Agent produces these event types:
 export class CursorParser implements VendorParser {
   vendor = 'cursor' as const;
   priority = 90; // Between Claude (100) and Amp (80)
-  
+
   private messageBuffer = new Map<string, string[]>();
-  
+
   detect(obj: unknown): boolean {
     if (!isObject(obj)) return false;
-    
+
     const hasType = 'type' in obj;
     const hasSessionId = 'session_id' in obj;
-    
+
     if (!hasType) return false;
-    
+
     // Check for Cursor-specific event types
     const type = obj.type;
     const validTypes = ['system', 'user', 'assistant', 'tool_call', 'result'];
-    
+
     if (validTypes.includes(type as string)) {
       // Additional validation for Cursor-specific structure
       if (type === 'system' && 'subtype' in obj) return true;
@@ -171,30 +187,32 @@ export class CursorParser implements VendorParser {
       if ((type === 'user' || type === 'assistant') && 'message' in obj) return true;
       if (type === 'result' && 'duration_ms' in obj) return true;
     }
-    
+
     return false;
   }
-  
+
   parse(line: string): AgentEvent[] {
     try {
       const obj = JSON.parse(line);
       if (!this.detect(obj)) {
         return [{ t: 'debug', raw: obj }];
       }
-      
+
       return this.parseEvent(obj);
     } catch (error) {
-      return [{
-        t: 'error',
-        message: `Cursor parse error: ${error instanceof Error ? error.message : String(error)}`
-      }];
+      return [
+        {
+          t: 'error',
+          message: `Cursor parse error: ${error instanceof Error ? error.message : String(error)}`,
+        },
+      ];
     }
   }
-  
+
   private parseEvent(obj: any): AgentEvent[] {
     const events: AgentEvent[] = [];
     const sessionId = obj.session_id;
-    
+
     switch (obj.type) {
       case 'system':
         if (obj.subtype === 'init') {
@@ -205,38 +223,38 @@ export class CursorParser implements VendorParser {
               vendor: 'cursor',
               model: obj.model,
               cwd: obj.cwd,
-              session: sessionId
-            }
+              session: sessionId,
+            },
           });
         }
         break;
-        
+
       case 'user':
         events.push(this.parseMessage(obj, 'user'));
         break;
-        
+
       case 'assistant':
         // Handle streaming text assembly
         const msg = this.parseMessage(obj, 'assistant');
-        
+
         // Buffer management for streaming text
         if (sessionId && msg.text) {
           if (!this.messageBuffer.has(sessionId)) {
             this.messageBuffer.set(sessionId, []);
           }
           this.messageBuffer.get(sessionId)!.push(msg.text);
-          
+
           // Don't emit individual characters/words in streaming mode
           // Could be enhanced with a timeout-based flush strategy
         }
-        
+
         events.push(msg);
         break;
-        
+
       case 'tool_call':
         events.push(...this.parseToolCall(obj));
         break;
-        
+
       case 'result':
         // Final result - flush any buffered messages
         if (sessionId && this.messageBuffer.has(sessionId)) {
@@ -246,7 +264,7 @@ export class CursorParser implements VendorParser {
           }
           this.messageBuffer.delete(sessionId);
         }
-        
+
         // Add result as debug info
         if (obj.result) {
           events.push({
@@ -255,50 +273,50 @@ export class CursorParser implements VendorParser {
               type: 'result',
               success: !obj.is_error,
               duration_ms: obj.duration_ms,
-              summary: obj.result
-            }
+              summary: obj.result,
+            },
           });
         }
         break;
-        
+
       default:
         events.push({ t: 'debug', raw: obj });
     }
-    
+
     return events;
   }
-  
+
   private parseMessage(obj: any, role: 'user' | 'assistant'): MessageEvent {
     const message = obj.message;
     let text = '';
-    
+
     if (message?.content && Array.isArray(message.content)) {
       text = message.content
         .filter((c: any) => c.type === 'text')
         .map((c: any) => c.text || '')
         .join('');
     }
-    
+
     return { t: 'msg', role, text };
   }
-  
+
   private parseToolCall(obj: any): AgentEvent[] {
     const events: AgentEvent[] = [];
     const callId = obj.call_id;
     const subtype = obj.subtype;
-    
+
     // Extract tool name from nested structure
     let toolName = 'unknown';
     let args: any = {};
     let result: any = null;
-    
+
     if (obj.tool_call) {
       // Find the tool name from the nested structure
       const callKeys = Object.keys(obj.tool_call);
       if (callKeys.length > 0) {
         const toolKey = callKeys[0]; // e.g., 'readToolCall'
         toolName = toolKey.replace(/ToolCall$/, ''); // Remove suffix
-        
+
         const toolData = obj.tool_call[toolKey];
         if (toolData) {
           args = toolData.args || {};
@@ -306,13 +324,13 @@ export class CursorParser implements VendorParser {
         }
       }
     }
-    
+
     if (subtype === 'started') {
       events.push({
         t: 'tool',
         name: toolName,
         phase: 'start',
-        text: `${toolName}(${JSON.stringify(args)})`
+        text: `${toolName}(${JSON.stringify(args)})`,
       });
     } else if (subtype === 'completed') {
       // Parse result
@@ -321,25 +339,25 @@ export class CursorParser implements VendorParser {
           t: 'tool',
           name: toolName,
           phase: 'stdout',
-          text: result.success.content
+          text: result.success.content,
         });
       } else if (result?.error) {
         events.push({
           t: 'tool',
           name: toolName,
           phase: 'stderr',
-          text: JSON.stringify(result.error)
+          text: JSON.stringify(result.error),
         });
       }
-      
+
       events.push({
         t: 'tool',
         name: toolName,
         phase: 'end',
-        exitCode: result?.error ? 1 : 0
+        exitCode: result?.error ? 1 : 0,
       });
     }
-    
+
     return events;
   }
 }
@@ -373,6 +391,7 @@ cursor-agent -p "build project" --output-format=stream-json | aio-stream --vendo
 Users will be able to pipe Cursor Agent output directly to aio-stream:
 
 ### Basic Usage
+
 ```bash
 # Simple prompt with auto-detection
 cursor-agent -p "What is the current version?" --output-format=stream-json | aio-stream
@@ -385,7 +404,9 @@ cursor-agent -p "run tests" --output-format=stream-json | aio-stream --only tool
 ```
 
 ### Expected Output
+
 The formatted output will display:
+
 - System initialization as debug info (hidden by default)
 - User prompts with proper role attribution
 - Assistant responses assembled from streaming chunks
@@ -399,11 +420,11 @@ The formatted output will display:
 Location: `packages/stream/src/parsers/cursor.test.ts`
 
 Test cases:
+
 1. **Detection tests**
    - Correctly identifies Cursor Agent format
    - Rejects non-Cursor formats
    - Priority ordering in registry
-   
 2. **Parsing tests**
    - System initialization events
    - User message parsing
@@ -423,11 +444,11 @@ Test cases:
 Location: `tests/integration/cursor-parser.test.ts`
 
 Test cases:
+
 1. **End-to-end streaming**
    - Process complete Cursor Agent session
    - Verify event sequence and timing
    - Test with large outputs
-   
 2. **Auto-detection**
    - Mixed vendor input detection
    - Cursor format prioritization
@@ -442,6 +463,7 @@ Test cases:
 Location: `packages/stream/tests/fixtures/cursor/`
 
 Required fixtures:
+
 1. **basic-prompt.jsonl** - Simple Q&A session
 2. **tool-execution.jsonl** - File reading, command execution
 3. **streaming-response.jsonl** - Character-by-character streaming
@@ -450,6 +472,7 @@ Required fixtures:
 6. **complex-session.jsonl** - Mixed events, tools, streaming
 
 Fixture collection process:
+
 ```bash
 # Capture real Cursor Agent outputs
 cursor-agent -p "test prompt" --output-format=stream-json > fixture.jsonl
@@ -458,12 +481,13 @@ cursor-agent -p "test prompt" --output-format=stream-json > fixture.jsonl
 ### Test Documentation
 
 Each test should include:
+
 ```typescript
 it('should handle streaming text assembly', () => {
   // Purpose: Validates that streaming character/word messages are properly
   // assembled into complete messages, preventing output fragmentation
   // This test can fail if buffer management is incorrect
-  
+
   const parser = new CursorParser();
   // ... test implementation
 });
@@ -472,6 +496,7 @@ it('should handle streaming text assembly', () => {
 ### Edge Case Testing
 
 Critical edge cases to test:
+
 1. Malformed JSON lines
 2. Missing required fields
 3. Unknown event types
@@ -501,6 +526,7 @@ Critical edge cases to test:
 ### Memory Management
 
 Message buffering considerations:
+
 - Implement maximum buffer size per session (e.g., 1MB)
 - Add timeout-based buffer cleanup (e.g., 5 minutes)
 - Option to disable buffering for reduced memory usage
@@ -535,11 +561,9 @@ Message buffering considerations:
 1. **README.md** (root)
    - Add Cursor Agent to supported vendors list
    - Include usage examples
-   
 2. **packages/stream/README.md**
    - Document Cursor parser specifics
    - Add CLI examples
-   
 3. **AGENT.md**
    - Update CLI interface section with Cursor examples
    - Add to troubleshooting guide
@@ -551,6 +575,7 @@ Message buffering considerations:
 ### New Documentation
 
 Create `docs/cursor-agent-integration.md`:
+
 - Installation instructions for cursor-agent CLI
 - Configuration requirements
 - Common usage patterns
@@ -562,6 +587,7 @@ Create `docs/cursor-agent-integration.md`:
 ### Phase 1: MVP/Core Functionality (2-3 days)
 
 **Deliverables:**
+
 1. Basic CursorParser class implementation
 2. Event type detection and parsing
 3. Registry integration
@@ -569,6 +595,7 @@ Create `docs/cursor-agent-integration.md`:
 5. Simple fixtures (manually created)
 
 **Success Criteria:**
+
 - Can parse basic Cursor Agent output
 - Correctly identifies format via auto-detection
 - All basic event types handled
@@ -576,6 +603,7 @@ Create `docs/cursor-agent-integration.md`:
 ### Phase 2: Enhanced Features (2-3 days)
 
 **Deliverables:**
+
 1. Streaming text assembly with buffering
 2. Complete tool call lifecycle handling
 3. Session management and cleanup
@@ -583,6 +611,7 @@ Create `docs/cursor-agent-integration.md`:
 5. Comprehensive test suite
 
 **Success Criteria:**
+
 - Handles complex streaming scenarios
 - Memory-efficient buffer management
 - Meets performance targets
@@ -590,6 +619,7 @@ Create `docs/cursor-agent-integration.md`:
 ### Phase 3: Polish and Documentation (1-2 days)
 
 **Deliverables:**
+
 1. Real fixture collection from cursor-agent
 2. Integration tests
 3. Documentation updates
@@ -597,19 +627,22 @@ Create `docs/cursor-agent-integration.md`:
 5. Performance benchmarks
 
 **Success Criteria:**
+
 - 100% test coverage for parser
 - Complete documentation
 - Production-ready implementation
 
 ## Open Questions
 
-1. **Message Buffering Strategy**: Should we buffer streaming messages by default or make it configurable?
+1. **Message Buffering Strategy**: Should we buffer streaming messages by default or make it
+   configurable?
    - **Recommendation**: Make it configurable with smart defaults
 
 2. **Session Timeout**: What's the appropriate timeout for session cleanup?
    - **Recommendation**: 5 minutes of inactivity
 
-3. **Tool Name Extraction**: Is the current strategy for extracting tool names from nested objects robust enough?
+3. **Tool Name Extraction**: Is the current strategy for extracting tool names from nested objects
+   robust enough?
    - **Needs Investigation**: Collect more tool call examples
 
 4. **Cost Tracking**: Does Cursor Agent provide token usage or cost information?
@@ -621,22 +654,26 @@ Create `docs/cursor-agent-integration.md`:
 ## References
 
 ### Related Issues/PRs
+
 - Original agent-io implementation specs in `/specs/` directory
 - Claude parser implementation: `packages/stream/src/parsers/claude.ts`
 - Parser registry pattern: `packages/stream/src/parsers/index.ts`
 
 ### External Documentation
+
 - Cursor Agent CLI documentation (if available)
 - JSONL specification: https://jsonlines.org/
 - Node.js Streams documentation: https://nodejs.org/api/stream.html
 
 ### Design Patterns
+
 - Registry Pattern for parser management
 - Strategy Pattern for vendor-specific parsing
 - Iterator Pattern for streaming processing
 - Builder Pattern for event construction
 
 ### Architectural Decisions
+
 - Event normalization to unified types
 - Streaming-first architecture
 - Parser priority system for auto-detection
@@ -651,35 +688,32 @@ From the provided example, we can identify these patterns:
 1. **Initialization Sequence**
    - Always starts with system/init event
    - Contains model, cwd, and permission info
-   
 2. **Message Streaming**
    - Assistant messages arrive character-by-character
    - Each chunk is a separate JSON line
    - Text must be assembled from chunks
-   
 3. **Tool Call Pattern**
    - Two-phase: started → completed
    - Nested structure with tool-specific sub-objects
    - Results embedded in completed event
-   
 4. **Session Tracking**
    - Every event includes session_id
    - Used for correlation and cleanup
-   
 5. **Result Summary**
    - Final event with duration and success status
    - Contains human-readable summary
 
 ### Comparison with Claude Format
 
-| Feature | Claude | Cursor |
-|---------|--------|--------|
-| Event field | `type` | `type` + `subtype` |
-| Message format | Direct content | Nested with role |
-| Tool calls | `tool_use` | `tool_call` |
-| Streaming | Block-based | Character-based |
-| Session tracking | No | Yes (session_id) |
-| Cost tracking | Yes (usage) | Not observed |
-| Error handling | error type | is_error flag |
+| Feature          | Claude         | Cursor             |
+| ---------------- | -------------- | ------------------ |
+| Event field      | `type`         | `type` + `subtype` |
+| Message format   | Direct content | Nested with role   |
+| Tool calls       | `tool_use`     | `tool_call`        |
+| Streaming        | Block-based    | Character-based    |
+| Session tracking | No             | Yes (session_id)   |
+| Cost tracking    | Yes (usage)    | Not observed       |
+| Error handling   | error type     | is_error flag      |
 
-This analysis informs the parser design and ensures compatibility with the existing agent-io architecture while properly handling Cursor Agent's unique characteristics.
+This analysis informs the parser design and ensures compatibility with the existing agent-io
+architecture while properly handling Cursor Agent's unique characteristics.

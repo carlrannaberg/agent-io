@@ -434,7 +434,9 @@ describe('Comprehensive Parser Integration Tests', () => {
 
         // Should process at least 500 lines per second (relaxed for error-handling fixtures)
         // Error-handling fixtures may be slower due to error recovery logic
-        const minLinesPerSecond = fixture.filename.includes('error') ? 500 : 1000;
+        const minLinesPerSecond = fixture.filename.includes('error')
+          ? 500
+          : 1000;
         expect(
           linesPerSecond,
           `${fixture.vendor} parser should process at least ${minLinesPerSecond} lines/sec, got ${linesPerSecond.toFixed(2)} for ${fixture.filename}`,

@@ -57,7 +57,7 @@ npm run validate             # Run lint + typecheck + test
 
 # Release Management (with Changesets)
 npm run changeset            # Create changeset for version bumping
-npm run version              # Update package versions  
+npm run version              # Update package versions
 
 # Proper Release Process
 npm run release:patch        # Release patch version (bug fixes)
@@ -631,8 +631,8 @@ npm run release:minor
 npm run release:major
 ```
 
-**Why use these scripts?**
-The `release:[version]` scripts automatically:
+**Why use these scripts?** The `release:[version]` scripts automatically:
+
 1. Run all tests to ensure code quality
 2. Update README files across packages
 3. Generate/update CHANGELOG entries
@@ -642,12 +642,14 @@ The `release:[version]` scripts automatically:
 7. Push changes and tags to GitHub
 
 **DO NOT use these commands directly for releases:**
+
 - ❌ `changeset publish` - Bypasses test validation and documentation updates
 - ❌ `npm publish` - Will not maintain version consistency across monorepo
 
 ### Release Checklist
 
 Before running a release command:
+
 1. Ensure all changes are committed
 2. Verify you're on the main branch
 3. Pull latest changes from remote
@@ -657,6 +659,7 @@ Before running a release command:
 ### Creating Changesets
 
 For individual changes during development:
+
 ```bash
 # Create a changeset for your changes
 npm run changeset
@@ -669,6 +672,7 @@ npm run changeset
 ### Manual Version Management (Advanced)
 
 If you need to manage versions manually:
+
 ```bash
 # Update versions based on changesets
 npm run version
@@ -692,18 +696,21 @@ npm run release:patch|minor|major
 **Important**: These are the correct CLI usage patterns for each AI tool:
 
 #### Claude CLI
+
 ```bash
 # Claude requires --output-format stream-json for JSONL output
 claude --output-format stream-json --verbose -p "explain recursion" | aio-stream
 ```
 
-#### Gemini CLI  
+#### Gemini CLI
+
 ```bash
 # Gemini outputs plain text (not JSONL), use -p flag for prompts
 gemini -p "Write a haiku about code" | aio-stream --vendor gemini
 ```
 
 #### Amp CLI
+
 ```bash
 # Amp can be used interactively or with piped input
 amp  # Interactive mode
@@ -713,6 +720,7 @@ echo "Build and test my project" | amp | aio-stream
 ```
 
 #### Cursor Agent CLI
+
 ```bash
 # Cursor Agent requires --output-format=stream-json for JSONL output
 cursor-agent -p "Read package.json and analyze dependencies" --output-format=stream-json | aio-stream

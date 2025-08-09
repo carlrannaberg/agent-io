@@ -252,7 +252,14 @@ describe('ParserRegistry', () => {
       testRegistry.registerParser(parser2);
 
       const vendors = testRegistry.listParsers();
-      expect(vendors).toEqual(['alpha', 'amp', 'claude', 'cursor', 'gemini', 'zebra']);
+      expect(vendors).toEqual([
+        'alpha',
+        'amp',
+        'claude',
+        'cursor',
+        'gemini',
+        'zebra',
+      ]);
     });
 
     it('returns empty array for empty registry', () => {

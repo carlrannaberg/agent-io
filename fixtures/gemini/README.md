@@ -4,9 +4,11 @@ This directory contains plain text output samples from Gemini CLI.
 
 ## Gemini CLI Output Format
 
-**Important**: As of version 0.1.x, Gemini CLI does NOT support JSONL output. It outputs plain text responses directly to stdout.
+**Important**: As of version 0.1.x, Gemini CLI does NOT support JSONL output. It outputs plain text
+responses directly to stdout.
 
 The CLI outputs:
+
 - A system message "Loaded cached credentials." at startup
 - Plain text responses from the model
 - Code blocks formatted with markdown-style triple backticks
