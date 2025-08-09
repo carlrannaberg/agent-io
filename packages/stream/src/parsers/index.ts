@@ -31,8 +31,10 @@ export class ParserRegistry {
    */
   constructor() {
     // Register built-in parsers with priority
-    this.registerParser(claudeParser, 100);
-    this.registerParser(cursorParser, 90);
+    // Cursor has highest priority since it's most specific (requires session_id)
+    this.registerParser(cursorParser, 100);
+    // Claude is less specific, can match broader patterns
+    this.registerParser(claudeParser, 90);
     this.registerParser(ampParser, 80);
     // Gemini has lowest priority since it accepts any non-JSON text
     this.registerParser(geminiParser, 10);

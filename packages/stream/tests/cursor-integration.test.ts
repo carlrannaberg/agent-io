@@ -91,8 +91,8 @@ describe('Cursor Parser Integration', () => {
       events.push(event);
     }
 
-    // Should have: 1 debug (init), 1 user msg, 5 assistant msgs, 1 buffered msg, 1 debug (result)
-    expect(events.length).toBeGreaterThanOrEqual(8);
+    // With buffering: 1 debug (init), 1 user msg, 1 buffered assistant msg, 1 debug (result)
+    expect(events.length).toBeGreaterThanOrEqual(4);
     
     // Check system init
     const debugEvents = events.filter(e => e.t === 'debug');
@@ -106,9 +106,10 @@ describe('Cursor Parser Integration', () => {
     expect(userMsg).toBeDefined();
     expect(userMsg?.text).toBe('What is 2+2?');
     
-    // Check assistant messages (individual streaming pieces)
+    // Check assistant message (should be buffered and combined)
     const assistantMsgs = events.filter(e => e.t === 'msg' && e.role === 'assistant');
-    expect(assistantMsgs.length).toBeGreaterThan(0);
+    expect(assistantMsgs.length).toBe(1);
+    expect(assistantMsgs[0].text).toBe('2+2 equals 4');
     
     // Check result debug event
     const resultDebug = debugEvents.find(e => e.raw?.type === 'result');
@@ -152,10 +153,10 @@ describe('Cursor Parser Integration', () => {
       session_id: 'stream-test'
     }));
     
-    // Individual messages should be emitted
-    expect(events1[0]).toMatchObject({ t: 'msg', role: 'assistant', text: 'Hello' });
-    expect(events2[0]).toMatchObject({ t: 'msg', role: 'assistant', text: ' ' });
-    expect(events3[0]).toMatchObject({ t: 'msg', role: 'assistant', text: 'world!' });
+    // With buffering, streaming assistant messages should return empty arrays
+    expect(events1).toEqual([]);
+    expect(events2).toEqual([]);
+    expect(events3).toEqual([]);
     
     // When result arrives, buffered message should be flushed
     const resultEvents = parser.parse(JSON.stringify({
@@ -218,9 +219,9 @@ describe('Cursor Parser Integration', () => {
       events.push(event);
     }
 
-    // Should have: start, stdout, end events
+    // Should have: start, end events (no stdout for file content)
     const toolEvents = events.filter(e => e.t === 'tool');
-    expect(toolEvents.length).toBe(3);
+    expect(toolEvents.length).toBe(2);
     
     // Check start event
     expect(toolEvents[0]).toMatchObject({
@@ -230,16 +231,8 @@ describe('Cursor Parser Integration', () => {
       text: expect.stringContaining('package.json')
     });
     
-    // Check stdout event
-    expect(toolEvents[1]).toMatchObject({
-      t: 'tool',
-      name: 'read',
-      phase: 'stdout',
-      text: expect.stringContaining('test-package')
-    });
-    
     // Check end event
-    expect(toolEvents[2]).toMatchObject({
+    expect(toolEvents[1]).toMatchObject({
       t: 'tool',
       name: 'read',
       phase: 'end',

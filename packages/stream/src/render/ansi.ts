@@ -192,8 +192,9 @@ export class AnsiRenderer implements Renderer {
 
         case 'read':
         case 'notebookread':
-          if (input.file_path || input.notebook_path) {
-            const path = input.file_path || input.notebook_path;
+          // Handle both 'file_path' (Claude) and 'path' (Cursor)
+          if (input.file_path || input.path || input.notebook_path) {
+            const path = input.file_path || input.path || input.notebook_path;
             const preview = input.limit ? ` (${input.limit} lines)` : '';
             return ` → ${path}${preview}`;
           }

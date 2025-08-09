@@ -86,6 +86,98 @@ export class CursorParser implements VendorParser {
   private messageBuffer = new Map<string, string[]>();
 
   /**
+   * Buffer for incomplete JSON lines that are split across multiple lines
+   * This handles the case where cursor-agent wraps long JSON at character limits
+   */
+  private incompleteLineBuffer = '';
+
+  /**
+   * Check if a text consists only of ignorable trailing garbage
+   * such as commas, quotes, and whitespace.
+   */
+  private isGarbageSuffix(text: string): boolean {
+    const t = text.trim();
+    return (
+      t === '' ||
+      t === ',' ||
+      t === ';' ||
+      t === '""' ||
+      t === '"' ||
+      t === "''" ||
+      t.startsWith(', ') ||
+      /^[,\s"']+$/.test(t)
+    );
+  }
+
+  /**
+   * Extract the first complete top-level JSON object from text by
+   * scanning braces while respecting string/escape sequences.
+   * Returns the JSON substring and the remaining suffix, or null.
+   */
+  private extractFirstJsonObject(text: string): { json: string; suffix: string } | null {
+    const start = text.indexOf('{');
+    if (start === -1) return null;
+
+    let inString = false;
+    let escape = false;
+    let depth = 0;
+
+    for (let i = start; i < text.length; i++) {
+      const ch = text[i];
+
+      if (inString) {
+        if (escape) {
+          escape = false;
+        } else if (ch === '\\') {
+          escape = true;
+        } else if (ch === '"') {
+          inString = false;
+        }
+        continue;
+      }
+
+      if (ch === '"') {
+        inString = true;
+        continue;
+      }
+      if (ch === '{') {
+        depth++;
+        continue;
+      }
+      if (ch === '}') {
+        depth--;
+        if (depth === 0) {
+          const json = text.slice(start, i + 1);
+          const suffix = text.slice(i + 1);
+          return { json, suffix };
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /** Remove ANSI escape/control sequences */
+  private stripAnsi(text: string): string {
+    // CSI sequences: ESC [ ... cmd
+    // eslint-disable-next-line no-control-regex
+    const CSI = /\x1B\[[0-?]*[ -/]*[@-~]/g;
+    // OSC sequences: ESC ] ... BEL
+    // eslint-disable-next-line no-control-regex
+    const OSC = /\x1B\][^\x07]*\x07/g;
+    // Other DCS/PM/APC terminated by ST (ESC \\)
+    // eslint-disable-next-line no-control-regex
+    const ST_TERM = /\x1B[PX^_].*?\x1B\\/gs;
+    return text.replace(CSI, '').replace(OSC, '').replace(ST_TERM, '');
+  }
+
+  /** True if line is only ANSI/control or zero-width chars/whitespace */
+  private isAnsiOrControlOnly(text: string): boolean {
+    const cleaned = this.stripAnsi(text).replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+    return cleaned === '';
+  }
+
+  /**
    * Detect if a line belongs to Cursor's JSONL format
    *
    * Fast detection method that checks for Cursor-specific event types.
@@ -112,9 +204,34 @@ export class CursorParser implements VendorParser {
       const validTypes = ['system', 'user', 'assistant', 'tool_call', 'result'];
       
       if (validTypes.includes(type as string)) {
-        if (type === 'system' && 'subtype' in record) return true;
+        // Cursor-specific: Always has session_id field
+        if (!('session_id' in record)) {
+          return false;
+        }
+        
+        // Distinguish from Claude Code which also has session_id
+        // Claude Code has 'tools' array and 'parent_tool_use_id' field
+        if ('tools' in record && Array.isArray(record.tools)) {
+          return false; // This is Claude Code, not Cursor
+        }
+        
+        // Claude Code messages have parent_tool_use_id field
+        if ('parent_tool_use_id' in record) {
+          return false; // This is Claude Code, not Cursor
+        }
+        
+        // Check for Cursor-specific field combinations
+        if (type === 'system' && 'subtype' in record && 'apiKeySource' in record && record.apiKeySource === 'login') return true;
         if (type === 'tool_call' && 'call_id' in record) return true;
-        if ((type === 'user' || type === 'assistant') && 'message' in record) return true;
+        if ((type === 'user' || type === 'assistant') && 'message' in record && record.message && typeof record.message === 'object') {
+          const msg = record.message as Record<string, unknown>;
+          // Cursor uses simple content array with type/text objects
+          // Claude Code has nested message with id, model, etc.
+          if ('id' in msg || 'model' in msg) {
+            return false; // This is Claude Code with nested message structure
+          }
+          if ('content' in msg && Array.isArray(msg.content)) return true;
+        }
         if (type === 'result' && 'duration_ms' in record) return true;
       }
       
@@ -136,13 +253,88 @@ export class CursorParser implements VendorParser {
    */
   parse(line: string): AgentEvent[] {
     try {
-      const obj = JSON.parse(line);
-      if (!this.detect(line)) {
-        return [{ t: 'debug', raw: obj }];
-      }
+      // Handle line-wrapped JSON where cursor-agent forces newlines at character limits
+      // This is similar to how Claude Code wraps long JSON lines
       
-      return this.parseEvent(obj);
+      // Append current line to buffer
+      this.incompleteLineBuffer += line;
+      
+      // Try to parse the accumulated buffer
+      let obj: unknown;
+      try {
+        obj = JSON.parse(this.incompleteLineBuffer);
+        // Successfully parsed - clear buffer and continue
+        const completeLine = this.incompleteLineBuffer;
+        this.incompleteLineBuffer = '';
+        
+        if (!this.detect(completeLine)) {
+          return [{ t: 'debug', raw: obj }];
+        }
+        
+        return this.parseEvent(obj as Record<string, unknown>);
+      } catch (parseError) {
+        // Check if this looks like an incomplete JSON object
+        const trimmed = this.incompleteLineBuffer.trim();
+
+        // Robust salvage: extract first complete JSON object and ignore
+        // any trailing garbage that consists only of commas/quotes/whitespace.
+        const extracted = this.extractFirstJsonObject(trimmed);
+        if (extracted) {
+          try {
+            const parsed = JSON.parse(extracted.json);
+            // Always drop any suffix after the first full JSON object for Cursor
+            // Cursor outputs are one object per logical emission; suffixes are noise
+            this.incompleteLineBuffer = '';
+            if (!this.detect(extracted.json)) {
+              return [{ t: 'debug', raw: parsed }];
+            }
+            return this.parseEvent(parsed as Record<string, unknown>);
+          } catch {
+            // fall through to normal handling
+          }
+        }
+
+        // If it starts with { but doesn't end with }, it's likely incomplete
+        if (trimmed.startsWith('{') && !trimmed.endsWith('}')) {
+          // Keep buffering - line is incomplete
+          return [];
+        }
+
+        // If it doesn't start with {, it might be a continuation line
+        if (!trimmed.startsWith('{') && this.incompleteLineBuffer !== line) {
+          // This was a continuation, keep buffering
+          return [];
+        }
+
+        // Ignore common trailing garbage that cursor-agent might output
+        // This includes commas, quotes, empty strings, etc.
+        if (this.isGarbageSuffix(trimmed)) {
+          this.incompleteLineBuffer = '';
+          return [];
+        }
+
+        // Ignore pure ANSI/control sequences (e.g., terminal show/hide cursor)
+        if (this.isAnsiOrControlOnly(trimmed)) {
+          this.incompleteLineBuffer = '';
+          return [];
+        }
+
+        // Otherwise, this is genuinely malformed JSON
+        // Clear buffer and return error
+        this.incompleteLineBuffer = '';
+
+        // Only show error for actual parsing issues
+        if (trimmed && !trimmed.startsWith(',')) {
+          return [{
+            t: 'error',
+            message: `Cursor parse error: ${parseError instanceof Error ? parseError.message : String(parseError)}`
+          }];
+        }
+        return [];
+      }
     } catch (error) {
+      // Clear buffer on unexpected errors
+      this.incompleteLineBuffer = '';
       return [{
         t: 'error',
         message: `Cursor parse error: ${error instanceof Error ? error.message : String(error)}`
@@ -181,6 +373,14 @@ export class CursorParser implements VendorParser {
       }
         
       case 'user': {
+        // Flush any buffered assistant messages before processing user message
+        if (sessionId && this.messageBuffer.has(sessionId)) {
+          const buffered = this.messageBuffer.get(sessionId)!.join('');
+          if (buffered) {
+            events.push({ t: 'msg', role: 'assistant', text: buffered });
+          }
+          this.messageBuffer.delete(sessionId);
+        }
         events.push(this.parseMessage(obj, 'user'));
         break;
       }
@@ -190,22 +390,19 @@ export class CursorParser implements VendorParser {
         const msg = this.parseMessage(obj, 'assistant');
         
         // Buffer management for streaming text
-        if (sessionId && msg.text) {
+        if (sessionId && 'text' in msg && msg.text) {
           if (!this.messageBuffer.has(sessionId)) {
             this.messageBuffer.set(sessionId, []);
           }
           this.messageBuffer.get(sessionId)!.push(msg.text);
           
-          // Don't emit individual characters/words in streaming mode
-          // Could be enhanced with a timeout-based flush strategy
+          // Don't emit individual tokens during streaming
+          // Wait for a complete message or result event to flush
+          // Return empty array to suppress token-by-token output
+          return [];
         }
         
         events.push(msg);
-        break;
-      }
-        
-      case 'tool_call': {
-        events.push(...this.parseToolCall(obj));
         break;
       }
         
@@ -231,6 +428,20 @@ export class CursorParser implements VendorParser {
             }
           });
         }
+        break;
+      }
+      
+      case 'tool_call': {
+        // On tool_call events, also flush any buffered messages before the tool
+        // This ensures text appears before tool execution starts
+        if (obj.subtype === 'started' && sessionId && this.messageBuffer.has(sessionId)) {
+          const buffered = this.messageBuffer.get(sessionId)!.join('');
+          if (buffered) {
+            events.push({ t: 'msg', role: 'assistant', text: buffered });
+          }
+          this.messageBuffer.delete(sessionId);
+        }
+        events.push(...this.parseToolCall(obj));
         break;
       }
         
@@ -264,6 +475,40 @@ export class CursorParser implements VendorParser {
     }
     
     return { t: 'msg', role, text };
+  }
+
+  /**
+   * Flush any buffered messages
+   * 
+   * Called when the stream ends to ensure all buffered content is emitted.
+   * 
+   * @returns Array of flushed message events
+   */
+  flush(): AgentEvent[] {
+    const events: AgentEvent[] = [];
+    
+    // Flush all buffered messages from all sessions
+    for (const [_sessionId, buffer] of this.messageBuffer.entries()) {
+      const text = buffer.join('');
+      if (text) {
+        events.push({ t: 'msg', role: 'assistant', text });
+      }
+    }
+    
+    // Clear all buffers
+    this.messageBuffer.clear();
+    
+    // Also clear incomplete line buffer
+    if (this.incompleteLineBuffer.trim()) {
+      // If there's incomplete JSON, emit as error
+      events.push({
+        t: 'error',
+        message: `Incomplete JSON at stream end: ${this.incompleteLineBuffer.substring(0, 100)}...`
+      });
+      this.incompleteLineBuffer = '';
+    }
+    
+    return events;
   }
 
   /**
@@ -301,22 +546,19 @@ export class CursorParser implements VendorParser {
     }
     
     if (subtype === 'started') {
+      // Pass raw args as JSON for the ANSI renderer to extract params
+      // This matches how Claude parser does it
       events.push({
         t: 'tool',
         name: toolName,
         phase: 'start',
-        text: `${toolName}(${JSON.stringify(args)})`
+        text: Object.keys(args).length > 0 ? JSON.stringify(args) : undefined
       });
     } else if (subtype === 'completed') {
-      // Parse result
-      if (result?.success?.content) {
-        events.push({
-          t: 'tool',
-          name: toolName,
-          phase: 'stdout',
-          text: result.success.content
-        });
-      } else if (result?.error) {
+      // Don't show file contents as stdout - just show completion
+      // Claude's formatter doesn't show content for file operations
+      
+      if (result?.error) {
         events.push({
           t: 'tool',
           name: toolName,
@@ -349,3 +591,4 @@ export class CursorParser implements VendorParser {
  * ```
  */
 export const cursorParser = new CursorParser();
+

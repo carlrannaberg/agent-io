@@ -198,6 +198,22 @@ export async function* streamEvents(
       }
     }
   } finally {
+    // Flush any buffered content from the parser
+    if (parser && 'flush' in parser && typeof parser.flush === 'function') {
+      try {
+        const flushedEvents = parser.flush();
+        for (const event of flushedEvents) {
+          yield event;
+        }
+      } catch (flushError) {
+        // Emit error event for flush failure
+        yield {
+          t: 'error',
+          message: `Failed to flush parser: ${flushError instanceof Error ? flushError.message : String(flushError)}`
+        };
+      }
+    }
+    
     // Emit summary debug event if requested
     if (emitDebugEvents && totalLines > 0) {
       yield {
