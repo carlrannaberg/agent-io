@@ -91,7 +91,7 @@
     "prettier": "3.6.2",
     "tar": "7.4.3",
     "tsup": "8.5.0",
-    "typescript": "^5.0.0",
+    "typescript": "^5.9.2",
     "vitest": "1.6.1"
   },
   "dependencies": {
